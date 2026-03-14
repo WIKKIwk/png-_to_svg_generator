@@ -31,24 +31,26 @@ def create_animated_svg(input_path, output_path):
                 stroke-dasharray: 100;
                 stroke-dashoffset: 100;
                 stroke-width: 2px;
-                stroke: #2d3436;
+                stroke: black;
                 fill: transparent;
-                animation: draw_and_fill 3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+                animation: draw 2s linear forwards, fill_shape 1s 2s forwards;
             }
 
-            @keyframes draw_and_fill {
+            @keyframes draw {
                 0% {
                     stroke-dashoffset: 100;
-                    fill: transparent;
-                    stroke: #2d3436;
-                }
-                70% {
-                    stroke-dashoffset: 0;
-                    fill: transparent;
-                    stroke: #2d3436;
                 }
                 100% {
                     stroke-dashoffset: 0;
+                }
+            }
+
+            @keyframes fill_shape {
+                0% {
+                    fill: transparent;
+                    stroke: black;
+                }
+                100% {
                     fill: black;
                     stroke: transparent;
                 }
