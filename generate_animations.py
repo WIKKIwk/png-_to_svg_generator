@@ -30,25 +30,28 @@ def create_animated_svg(input_path, output_path):
             path {
                 vector-effect: non-scaling-stroke;
                 stroke-dasharray: 100;
-                stroke-dashoffset: 100;
-                stroke-width: 2px;
-                stroke: black;
-                fill: transparent;
-                animation: draw_and_fill 3s ease-in-out forwards;
+                stroke-dashoffset: 0;  /* Agar viewer animatsiyani to'xtatsa, o'chib ketmasligi uchun asil holati chizilgan bo'ladi */
+                stroke-width: 0.5px;
+                stroke: transparent;
+                fill: black;
+                animation: draw_and_fill 8s ease-out forwards;
             }
 
             @keyframes draw_and_fill {
                 0% {
                     stroke-dashoffset: 100;
                     fill: transparent;
+                    stroke: black;
                 }
-                60% {
+                75% {
                     stroke-dashoffset: 0;
                     fill: transparent;
+                    stroke: black;
                 }
                 100% {
                     stroke-dashoffset: 0;
                     fill: black;
+                    stroke: transparent;
                 }
             }
         """
