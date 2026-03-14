@@ -2,9 +2,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="1024.000000pt" height="719.000000pt" viewBox="0 0 1024.000000 719.000000" preserveAspectRatio="xMidYMid meet">
 <style>
             path {
+                vector-effect: non-scaling-stroke;
                 stroke-dasharray: 100;
                 stroke-dashoffset: 100;
-                stroke-width: 2px;
+                stroke-width: 3px;
                 stroke: black;
                 fill: transparent;
                 animation: draw 2s linear forwards, fill_shape 1s 2s forwards;

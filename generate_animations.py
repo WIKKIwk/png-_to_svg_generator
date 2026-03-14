@@ -28,9 +28,10 @@ def create_animated_svg(input_path, output_path):
         style_elem = ET.Element('{http://www.w3.org/2000/svg}style')
         style_elem.text = """
             path {
+                vector-effect: non-scaling-stroke;
                 stroke-dasharray: 100;
                 stroke-dashoffset: 100;
-                stroke-width: 2px;
+                stroke-width: 3px;
                 stroke: black;
                 fill: transparent;
                 animation: draw 2s linear forwards, fill_shape 1s 2s forwards;
