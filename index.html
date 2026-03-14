@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Convert PNG images to SVG vector format with high quality preservation">
+    <title>PNG to SVG Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #1f1f35;
+            --accent: #6c63ff;
+            --accent-glow: rgba(108, 99, 255, 0.3);
+            --accent-light: #8b83ff;
+            --success: #00d68f;
+            --warning: #ffaa00;
+            --text-primary: #f0f0f5;
+            --text-secondary: #8888a0;
+            --text-muted: #555570;
+            --border: rgba(255,255,255,0.06);
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(108,99,255,0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(0,214,143,0.05) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 50%, rgba(108,99,255,0.03) 0%, transparent 70%);
+            animation: bgShift 20s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        @keyframes bgShift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-2%, 1%) rotate(1deg); }
+            66% { transform: translate(1%, -1%) rotate(-1deg); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .header-icon {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px var(--accent-glow);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        /* Drop Zone */
+        .drop-zone {
+            border: 2px dashed rgba(108,99,255,0.3);
+            border-radius: var(--radius);
+            padding: 60px 40px;
+            text-align: center;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(108,99,255,0.05) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(108,99,255,0.15);
+        }
+
+        .drop-zone:hover::before,
+        .drop-zone.drag-over::before {
+            opacity: 1;
+        }
+
+        .drop-zone-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .drop-zone-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .drop-zone-hint {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Settings */
+        .settings-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-top: 24px;
+        }
+
+        .settings-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .setting-item label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .setting-item input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(108,99,255,0.2);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .setting-item input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 2px 8px var(--accent-glow);
+        }
+
+        .setting-value {
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--accent-light);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* Convert Button */
+        .convert-btn {
+            width: 100%;
+            padding: 18px;
+            margin-top: 24px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.02em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .convert-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .convert-btn:hover::before {
+            opacity: 1;
+        }
+
+        .convert-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px var(--accent-glow);
+        }
+
+        .convert-btn:active {
+            transform: translateY(0);
+        }
+
+        .convert-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* File List */
+        .file-list {
+            margin-top: 24px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            transition: var(--transition);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-item:hover {
+            border-color: rgba(108,99,255,0.2);
+        }
+
+        .file-preview {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            object-fit: cover;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .file-size {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .file-remove {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: var(--transition);
+        }
+
+        .file-remove:hover {
+            background: rgba(255,50,50,0.1);
+            border-color: rgba(255,50,50,0.3);
+            color: #ff5050;
+        }
+
+        /* Results */
+        .results {
+            margin-top: 32px;
+        }
+
+        .result-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 16px;
+            animation: slideIn 0.4s ease;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .result-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .result-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(0,214,143,0.15);
+            color: var(--success);
+        }
+
+        .result-preview {
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+        }
+
+        .result-preview img,
+        .result-preview svg {
+            max-width: 100%;
+            max-height: 400px;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .download-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: 'Inter', sans-serif;
+            text-align: center;
+        }
+
+        .download-btn:hover {
+            border-color: var(--accent);
+            background: rgba(108,99,255,0.1);
+        }
+
+        .download-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .download-btn.primary:hover {
+            background: var(--accent-light);
+        }
+
+        /* Progress */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(108,99,255,0.1);
+            border-radius: 2px;
+            margin-top: 24px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar.active {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            animation: progressShine 1.5s infinite;
+        }
+
+        @keyframes progressShine {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* Status */
+        .status-text {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            h1 { font-size: 1.8rem; }
+            .settings-grid { grid-template-columns: 1fr; }
+            .drop-zone { padding: 40px 20px; }
+            .result-actions { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-icon">⚡</div>
+            <h1>PNG to SVG Generator</h1>
+            <p class="subtitle">Convert your PNG images to scalable vector graphics with quality preservation</p>
+        </div>
+
+        <!-- Drop Zone -->
+        <div class="drop-zone" id="dropZone">
+            <span class="drop-zone-icon">📁</span>
+            <p class="drop-zone-text">Drop PNG files here or click to browse</p>
+            <p class="drop-zone-hint">Supports multiple PNG files • Max 10MB per file</p>
+            <input type="file" class="file-input" id="fileInput" accept=".png" multiple>
+        </div>
+
+        <!-- File List -->
+        <div class="file-list" id="fileList"></div>
+
+        <!-- Settings -->
+        <div class="settings-panel">
+            <div class="settings-title">⚙️ Conversion Settings</div>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label>Threshold</label>
+                    <input type="range" id="threshold" min="50" max="250" value="180">
+                    <div class="setting-value" id="thresholdValue">180</div>
+                </div>
+                <div class="setting-item">
+                    <label>Smoothing</label>
+                    <input type="range" id="smoothing" min="0" max="30" value="15">
+                    <div class="setting-value" id="smoothingValue">1.5</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Convert Button -->
+        <button class="convert-btn" id="convertBtn" disabled>
+            🚀 Convert to SVG
+        </button>
+
+        <!-- Progress -->
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <p class="status-text" id="statusText"></p>
+
+        <!-- Results -->
+        <div class="results" id="results"></div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>PNG to SVG Generator • Built with ❤️ • 2024</p>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // PNG to SVG Converter - Web UI
+        // =============================================
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const convertBtn = document.getElementById('convertBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const statusText = document.getElementById('statusText');
+        const results = document.getElementById('results');
+        const thresholdSlider = document.getElementById('threshold');
+        const smoothingSlider = document.getElementById('smoothing');
+
+        let selectedFiles = [];
+
+        // Settings controls
+        thresholdSlider.addEventListener('input', () => {
+            document.getElementById('thresholdValue').textContent = thresholdSlider.value;
+        });
+
+        smoothingSlider.addEventListener('input', () => {
+            document.getElementById('smoothingValue').textContent = (smoothingSlider.value / 10).toFixed(1);
+        });
+
+        // Drop zone events
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'image/png');
+            addFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            addFiles(Array.from(e.target.files));
+        });
+
+        function addFiles(files) {
+            files.forEach(file => {
+                if (!selectedFiles.find(f => f.name === file.name)) {
+                    selectedFiles.push(file);
+                }
+            });
+            renderFileList();
+            convertBtn.disabled = selectedFiles.length === 0;
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            renderFileList();
+            convertBtn.disabled = selectedFiles.length === 0;
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function renderFileList() {
+            fileList.innerHTML = selectedFiles.map((file, i) => {
+                const url = URL.createObjectURL(file);
+                return `
+                    <div class="file-item">
+                        <img class="file-preview" src="${url}" alt="${file.name}">
+                        <div class="file-info">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${formatSize(file.size)}</div>
+                        </div>
+                        <button class="file-remove" onclick="removeFile(${i})">×</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // =============================================
+        // Core Conversion Logic (runs in browser)
+        // =============================================
+
+        convertBtn.addEventListener('click', async () => {
+            if (selectedFiles.length === 0) return;
+
+            convertBtn.disabled = true;
+            progressBar.classList.add('active');
+            results.innerHTML = '';
+
+            const threshold = parseInt(thresholdSlider.value);
+            const smoothing = parseFloat(smoothingSlider.value) / 10;
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const progress = ((i + 1) / selectedFiles.length) * 100;
+                progressFill.style.width = progress + '%';
+                statusText.textContent = `Converting ${file.name} (${i + 1}/${selectedFiles.length})...`;
+
+                try {
+                    const svgData = await convertPngToSvg(file, threshold, smoothing);
+                    displayResult(file.name, svgData);
+                } catch (err) {
+                    statusText.textContent = `Error converting ${file.name}: ${err.message}`;
+                }
+            }
+
+            statusText.textContent = `✅ Conversion complete! ${selectedFiles.length} file(s) converted.`;
+            convertBtn.disabled = false;
+        });
+
+        function convertPngToSvg(file, threshold, smoothing) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+
+                img.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+
+                        // Draw white background + image
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+
+                        // Get pixel data
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const pixels = imageData.data;
+                        const w = canvas.width;
+                        const h = canvas.height;
+
+                        // Convert to grayscale and threshold
+                        const binary = new Uint8Array(w * h);
+                        for (let i = 0; i < pixels.length; i += 4) {
+                            const gray = 0.299 * pixels[i] + 0.587 * pixels[i+1] + 0.114 * pixels[i+2];
+                            binary[i / 4] = gray < threshold ? 1 : 0;
+                        }
+
+                        // Find edges
+                        const edges = findEdges(binary, w, h);
+
+                        // Trace contours
+                        const contours = traceContours(edges, w, h);
+
+                        // Simplify contours
+                        const simplified = contours
+                            .filter(c => c.length >= 3)
+                            .map(c => simplifyPath(c, smoothing))
+                            .filter(c => c.length >= 3);
+
+                        // Generate SVG
+                        const svg = generateSvg(w, h, simplified);
+                        resolve(svg);
+
+                        URL.revokeObjectURL(url);
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+
+                img.onerror = () => reject(new Error('Failed to load image'));
+                img.src = url;
+            });
+        }
+
+        function findEdges(binary, w, h) {
+            const edges = new Uint8Array(w * h);
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const idx = y * w + x;
+                    if (binary[idx] === 1) {
+                        const neighbors = [
+                            binary[(y-1)*w+x], binary[(y+1)*w+x],
+                            binary[y*w+(x-1)], binary[y*w+(x+1)],
+                            binary[(y-1)*w+(x-1)], binary[(y-1)*w+(x+1)],
+                            binary[(y+1)*w+(x-1)], binary[(y+1)*w+(x+1)]
+                        ];
+                        if (neighbors.includes(0)) {
+                            edges[idx] = 1;
+                        }
+                    }
+                }
+            }
+            return edges;
+        }
+
+        function traceContours(edges, w, h) {
+            const visited = new Uint8Array(w * h);
+            const contours = [];
+            const dx = [1, 1, 0, -1, -1, -1, 0, 1];
+            const dy = [0, 1, 1, 1, 0, -1, -1, -1];
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const idx = y * w + x;
+                    if (edges[idx] === 1 && visited[idx] === 0) {
+                        const contour = traceSingle(edges, visited, x, y, dx, dy, w, h);
+                        if (contour.length >= 5) {
+                            contours.push(contour);
+                        }
+                    }
+                }
+            }
+            return contours;
+        }
+
+        function traceSingle(edges, visited, sx, sy, dx, dy, w, h) {
+            const contour = [[sx, sy]];
+            visited[sy * w + sx] = 1;
+            let cx = sx, cy = sy, dir = 0;
+            const maxSteps = w * h;
+
+            for (let step = 0; step < maxSteps; step++) {
+                let found = false;
+                for (let i = 0; i < 8; i++) {
+                    const d = (dir + i) % 8;
+                    const nx = cx + dx[d], ny = cy + dy[d];
+                    if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                        const nIdx = ny * w + nx;
+                        if (edges[nIdx] === 1 && visited[nIdx] === 0) {
+                            visited[nIdx] = 1;
+                            contour.push([nx, ny]);
+                            cx = nx; cy = ny;
+                            dir = (d + 5) % 8;
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) break;
+                if (Math.abs(cx - sx) <= 1 && Math.abs(cy - sy) <= 1 && contour.length > 10) {
+                    contour.push([sx, sy]);
+                    break;
+                }
+            }
+            return contour;
+        }
+
+        function simplifyPath(points, tolerance) {
+            if (points.length <= 2) return points;
+            const start = points[0], end = points[points.length - 1];
+            let maxDist = 0, maxIdx = 0;
+
+            for (let i = 1; i < points.length - 1; i++) {
+                const dist = ptLineDist(points[i], start, end);
+                if (dist > maxDist) { maxDist = dist; maxIdx = i; }
+            }
+
+            if (maxDist > tolerance) {
+                const left = simplifyPath(points.slice(0, maxIdx + 1), tolerance);
+                const right = simplifyPath(points.slice(maxIdx), tolerance);
+                return left.slice(0, -1).concat(right);
+            }
+            return [start, end];
+        }
+
+        function ptLineDist(p, a, b) {
+            const dx = b[0] - a[0], dy = b[1] - a[1];
+            const lenSq = dx * dx + dy * dy;
+            if (lenSq === 0) return Math.hypot(p[0] - a[0], p[1] - a[1]);
+            const t = Math.max(0, Math.min(1, ((p[0]-a[0])*dx + (p[1]-a[1])*dy) / lenSq));
+            return Math.hypot(p[0] - (a[0] + t*dx), p[1] - (a[1] + t*dy));
+        }
+
+        function generateSvg(w, h, contours) {
+            let paths = '';
+            for (const contour of contours) {
+                if (contour.length < 3) continue;
+                let d = `M ${contour[0][0]},${contour[0][1]}`;
+                for (let i = 1; i < contour.length - 1; i++) {
+                    const [cx, cy] = contour[i];
+                    const [nx, ny] = contour[i + 1] || contour[i];
+                    const mx = (cx + nx) / 2, my = (cy + ny) / 2;
+                    d += ` Q ${cx},${cy} ${mx},${my}`;
+                }
+                const last = contour[contour.length - 1], first = contour[0];
+                const dist = Math.hypot(last[0]-first[0], last[1]-first[1]);
+                d += dist < 5 ? ' Z' : ` L ${last[0]},${last[1]}`;
+                paths += `    <path d="${d}"/>\n`;
+            }
+
+            return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+  <title>Converted from PNG</title>
+  <desc>Generated by PNG to SVG Generator</desc>
+  <g fill="none" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+${paths}  </g>
+</svg>`;
+        }
+
+        function displayResult(fileName, svgData) {
+            const baseName = fileName.replace('.png', '').replace(/ /g, '_');
+            const div = document.createElement('div');
+            div.className = 'result-item';
+            div.innerHTML = `
+                <div class="result-header">
+                    <span class="result-name">${fileName} → ${baseName}.svg</span>
+                    <span class="result-badge">✓ Converted</span>
+                </div>
+                <div class="result-preview">${svgData}</div>
+                <div class="result-actions">
+                    <button class="download-btn primary" onclick="downloadSvg(\`${encodeURIComponent(svgData)}\`, '${baseName}.svg')">
+                        ⬇️ Download SVG
+                    </button>
+                    <button class="download-btn" onclick="copySvg(\`${encodeURIComponent(svgData)}\`)">
+                        📋 Copy SVG Code
+                    </button>
+                </div>
+            `;
+            results.appendChild(div);
+        }
+
+        function downloadSvg(encodedData, filename) {
+            const data = decodeURIComponent(encodedData);
+            const blob = new Blob([data], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function copySvg(encodedData) {
+            const data = decodeURIComponent(encodedData);
+            navigator.clipboard.writeText(data).then(() => {
+                statusText.textContent = '📋 SVG code copied to clipboard!';
+                setTimeout(() => { statusText.textContent = ''; }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
