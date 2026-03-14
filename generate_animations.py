@@ -14,11 +14,16 @@ def create_animated_svg(input_path, output_path):
         # Original SVG attributes
         namespace = {'svg': 'http://www.w3.org/2000/svg'}
         
-        # Hamma path larga pathLength="100" qo'shamiz (hisob-kitobsiz optimal usul)
+        # Hamma path larga pathLength="100" qo'shamiz va inline delay beramiz
         paths = root.findall('.//{http://www.w3.org/2000/svg}path')
-        for path in paths:
+        num_paths = len(paths)
+        for i, path in enumerate(paths):
             path.set('pathLength', '100')
-            # O'rnatilgan fill larni o'chiramiz, sababi uni CSS bilan harakatga keltiramiz
+            # Bir tekisda boshlanishi uchun, 0 soniyadan 5 soniyagacha tarqatamiz:
+            delay = (i / max(1, num_paths)) * 10.0
+            path.set('style', f'animation-delay: {delay:.2f}s;')
+            
+            # O'rnatilgan fill larni o'chiramiz
             if 'fill' in path.attrib:
                 del path.attrib['fill']
             if 'stroke' in path.attrib:
@@ -30,11 +35,11 @@ def create_animated_svg(input_path, output_path):
             path {
                 vector-effect: non-scaling-stroke;
                 stroke-dasharray: 100;
-                stroke-dashoffset: 0;  /* Agar viewer animatsiyani to'xtatsa, o'chib ketmasligi uchun asil holati chizilgan bo'ladi */
+                stroke-dashoffset: 100; /* Boshida ko'rinmas turishi uchun 100 bo'lishi shart */
                 stroke-width: 0.5px;
-                stroke: transparent;
-                fill: black;
-                animation: draw_and_fill 8s ease-out forwards;
+                stroke: black;
+                fill: transparent;
+                animation: draw_and_fill 4s linear both; /* ikkala tarafga ham apply() qiladi jami har biri 4sekund chizadi */
             }
 
             @keyframes draw_and_fill {
