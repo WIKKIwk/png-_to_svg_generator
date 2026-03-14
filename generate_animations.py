@@ -31,26 +31,23 @@ def create_animated_svg(input_path, output_path):
                 vector-effect: non-scaling-stroke;
                 stroke-dasharray: 100;
                 stroke-dashoffset: 100;
-                stroke-width: 1px;
+                stroke-width: 2px;
                 stroke: black;
                 fill: transparent;
-                animation: draw 2s linear forwards, fill_shape 1s 2s forwards;
+                animation: draw_and_fill 3s ease-in-out forwards;
             }
 
-            @keyframes draw {
+            @keyframes draw_and_fill {
                 0% {
                     stroke-dashoffset: 100;
+                    fill: transparent;
                 }
-                100% {
+                60% {
                     stroke-dashoffset: 0;
-                }
-            }
-
-            @keyframes fill_shape {
-                0% {
                     fill: transparent;
                 }
                 100% {
+                    stroke-dashoffset: 0;
                     fill: black;
                 }
             }
