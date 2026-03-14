@@ -31,7 +31,7 @@ def create_animated_svg(input_path, output_path):
                 vector-effect: non-scaling-stroke;
                 stroke-dasharray: 100;
                 stroke-dashoffset: 100;
-                stroke-width: 3px;
+                stroke-width: 1px;
                 stroke: black;
                 fill: transparent;
                 animation: draw 2s linear forwards, fill_shape 1s 2s forwards;
@@ -49,11 +49,9 @@ def create_animated_svg(input_path, output_path):
             @keyframes fill_shape {
                 0% {
                     fill: transparent;
-                    stroke: black;
                 }
                 100% {
                     fill: black;
-                    stroke: transparent;
                 }
             }
         """
