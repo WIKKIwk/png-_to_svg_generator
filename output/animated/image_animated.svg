@@ -7,15 +7,8 @@
                 stroke-width: 2px;
                 stroke: #2d3436;
                 fill: transparent;
-                animation: draw_and_fill 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+                animation: draw_and_fill 3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
             }
-            
-            /* Bir-biriga ulanib harakat qilishi uchun xuddi web dagi delay larni (Stagger) yasaymiz */
-            path:nth-child(1n) { animation-delay: 0.1s; }
-            path:nth-child(2n) { animation-delay: 0.3s; }
-            path:nth-child(3n) { animation-delay: 0.5s; }
-            path:nth-child(4n) { animation-delay: 0.2s; }
-            path:nth-child(5n) { animation-delay: 0.4s; }
 
             @keyframes draw_and_fill {
                 0% {
